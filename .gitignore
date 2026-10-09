@@ -1,0 +1,42 @@
+# Java e Maven
+target/
+*.class
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.factorypath
+.sts4-cache/
+/.metadata/
+/bin/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Variáveis de ambiente e segredos locais
+.env
+.env.*
+!.env.example
+
+# Configurações locais da aplicação
+application-local.properties
+application-local.yml
+application-local.yaml
+
+# Dados locais do PostgreSQL
+/postgres-data/
+/pgdata/
+
+# Arquivos temporários
+*.tmp
+*.swp
+*.bak
