@@ -1,0 +1,9 @@
+KitTrack - Pacote de modelagem v2
+
+Conteúdo:
+- KitTrack_Modelo_Dados_v2.md: documento do modelo lógico, ainda sem SQL.
+- KitTrack_MER_v2.drawio: diagramas editáveis com páginas de visão geral, pessoas/aulas, regras/planejamento, entrega/estoque.
+- KitTrack_Fluxo_Operacional_v2.drawio: fluxo operacional editável.
+- Arquivos PNG: imagens de cada diagrama.
+
+Antes de criar migrações Flyway, revisar a seção "Decisões ainda pendentes antes do SQL" no documento Markdown.
