@@ -160,17 +160,123 @@ public class AulaRepository {
         );
     }
 
+    @Transactional
     public void entregarKit(Long id) {
+        List<String> statusList = jdbc.query(
+            "SELECT status FROM kit WHERE id = ? FOR UPDATE",
+            (rs, row) -> rs.getString("status"),
+            id
+        );
+
+        if (statusList.isEmpty()) {
+            throw new IllegalArgumentException("Kit não encontrado.");
+        }
+
+        if (!"PENDENTE".equals(statusList.get(0))) {
+            throw new IllegalArgumentException(
+                "Somente kits pendentes podem ser entregues."
+            );
+        }
+
+        List<ItemMovimento> itens = jdbc.query("""
+            SELECT ti.nome,
+                   ti.quantidade_disponivel,
+                   ki.quantidade
+            FROM kit_item ki
+            JOIN tipo_item ti ON ti.id = ki.tipo_item_id
+            WHERE ki.kit_id = ?
+            ORDER BY ti.id
+            FOR UPDATE OF ti
+            """,
+            (rs, row) -> new ItemMovimento(
+                rs.getString("nome"),
+                rs.getInt("quantidade"),
+                rs.getInt("quantidade_disponivel")
+            ),
+            id
+        );
+
+        for (ItemMovimento item : itens) {
+            if (item.quantidade() > item.disponivel()) {
+                throw new IllegalArgumentException(
+                    "Estoque insuficiente para " + item.nome()
+                    + ". Necessário: " + item.quantidade()
+                    + "; disponível: " + item.disponivel() + "."
+                );
+            }
+        }
+
+        for (ItemMovimento item : itens) {
+            jdbc.update("""
+                UPDATE tipo_item
+                SET quantidade_disponivel = quantidade_disponivel - ?
+                WHERE nome = ?
+                """,
+                item.quantidade(), item.nome()
+            );
+        }
+
         jdbc.update(
-            "UPDATE kit SET status = 'ENTREGUE' WHERE id = ? AND status = 'PENDENTE'",
+            "UPDATE kit SET status = 'ENTREGUE' WHERE id = ?",
             id
         );
     }
 
+    @Transactional
     public void devolverKit(Long id) {
+        List<String> statusList = jdbc.query(
+            "SELECT status FROM kit WHERE id = ? FOR UPDATE",
+            (rs, row) -> rs.getString("status"),
+            id
+        );
+
+        if (statusList.isEmpty()) {
+            throw new IllegalArgumentException("Kit não encontrado.");
+        }
+
+        if (!"ENTREGUE".equals(statusList.get(0))) {
+            throw new IllegalArgumentException(
+                "Somente kits entregues podem ser devolvidos."
+            );
+        }
+
+        List<ItemMovimento> itens = jdbc.query("""
+            SELECT ti.nome,
+                   ti.quantidade_disponivel,
+                   ki.quantidade
+            FROM kit_item ki
+            JOIN tipo_item ti ON ti.id = ki.tipo_item_id
+            WHERE ki.kit_id = ?
+            ORDER BY ti.id
+            FOR UPDATE OF ti
+            """,
+            (rs, row) -> new ItemMovimento(
+                rs.getString("nome"),
+                rs.getInt("quantidade"),
+                rs.getInt("quantidade_disponivel")
+            ),
+            id
+        );
+
+        for (ItemMovimento item : itens) {
+            jdbc.update("""
+                UPDATE tipo_item
+                SET quantidade_disponivel = quantidade_disponivel + ?
+                WHERE nome = ?
+                """,
+                item.quantidade(), item.nome()
+            );
+        }
+
         jdbc.update(
-            "UPDATE kit SET status = 'DEVOLVIDO' WHERE id = ? AND status = 'ENTREGUE'",
+            "UPDATE kit SET status = 'DEVOLVIDO' WHERE id = ?",
             id
         );
     }
+
+    private record ItemMovimento(
+        String nome,
+        int quantidade,
+        int disponivel
+    ) {}
 }

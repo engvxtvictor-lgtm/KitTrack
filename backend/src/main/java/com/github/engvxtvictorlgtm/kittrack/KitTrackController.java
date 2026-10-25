@@ -80,7 +80,8 @@ public class KitTrackController {
             );
         } catch (IllegalArgumentException | DataAccessException e) {
             redirect.addFlashAttribute(
-                "erro", "Não foi possível cadastrar a aula. Confira os dados e os itens."
+                "erro",
+                "Não foi possível cadastrar a aula. Confira os dados e os itens."
             );
         }
 
@@ -88,14 +89,44 @@ public class KitTrackController {
     }
 
     @PostMapping("/kits/{id}/entregar")
-    public String entregar(@PathVariable Long id) {
-        repository.entregarKit(id);
+    public String entregar(
+            @PathVariable Long id,
+            RedirectAttributes redirect) {
+
+        try {
+            repository.entregarKit(id);
+            redirect.addFlashAttribute(
+                "mensagem", "Kit entregue com sucesso."
+            );
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("erro", e.getMessage());
+        } catch (DataAccessException e) {
+            redirect.addFlashAttribute(
+                "erro", "Erro no banco ao tentar entregar o kit."
+            );
+        }
+
         return "redirect:/";
     }
 
     @PostMapping("/kits/{id}/devolver")
-    public String devolver(@PathVariable Long id) {
-        repository.devolverKit(id);
+    public String devolver(
+            @PathVariable Long id,
+            RedirectAttributes redirect) {
+
+        try {
+            repository.devolverKit(id);
+            redirect.addFlashAttribute(
+                "mensagem", "Kit devolvido com sucesso."
+            );
+        } catch (IllegalArgumentException e) {
+            redirect.addFlashAttribute("erro", e.getMessage());
+        } catch (DataAccessException e) {
+            redirect.addFlashAttribute(
+                "erro", "Erro no banco ao tentar devolver o kit."
+            );
+        }
+
         return "redirect:/";
     }
 }
