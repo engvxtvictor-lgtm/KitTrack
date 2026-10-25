@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KitTrack - Controle de Kits</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1100px; margin: 35px auto; padding: 0 16px; background: #f5f6fa; color: #222; }
+        h1 { margin-bottom: 6px; }
+        .subtitulo { color: #666; margin-bottom: 25px; }
+        .aula { background: white; padding: 20px; margin-bottom: 18px; border-radius: 8px; border: 1px solid #ddd; }
+        .detalhes { display: flex; flex-wrap: wrap; gap: 18px; margin: 12px 0; }
+        .status { font-weight: bold; }
+        button { border: 0; border-radius: 5px; padding: 10px 14px; cursor: pointer; margin: 5px 5px 0 0; }
+        .entregar { background: #176b42; color: white; }
+        .devolver { background: #2056a8; color: white; }
+        .vazio { background: white; padding: 20px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <h1>KitTrack</h1>
+    <p class="subtitulo">Controle de distribuição e devolução dos kits de transmissão.</p>
+
+    <div th:if="${#lists.isEmpty(aulas)}" class="vazio">
+        Nenhuma aula cadastrada.
+    </div>
+
+    <section th:each="aula : ${aulas}" class="aula">
+        <h2 th:text="${aula.transmissor}">Transmissor</h2>
+
+        <div class="detalhes">
+            <span>Data: <strong th:text="${aula.dataAula}"></strong></span>
+            <span>Horário:
+                <strong th:text="${aula.horarioInicio}"></strong> -
+                <strong th:text="${aula.horarioFim}"></strong>
+            </span>
+            <span>Sala: <strong th:text="${aula.sala}"></strong></span>
+        </div>
+
+        <p>Itens do kit: <strong th:text="${aula.itens}"></strong></p>
+        <p>Status do kit:
+            <span class="status" th:text="${aula.statusKit ?: 'SEM KIT'}"></span>
+        </p>
+
+        <form th:if="${aula.kitId != null and aula.statusKit == 'PENDENTE'}"
+              th:action="@{/kits/{id}/entregar(id=${aula.kitId})}" method="post">
+            <button class="entregar" type="submit">Registrar entrega</button>
+        </form>
+
+        <form th:if="${aula.kitId != null and aula.statusKit == 'ENTREGUE'}"
+              th:action="@{/kits/{id}/devolver(id=${aula.kitId})}" method="post">
+            <button class="devolver" type="submit">Registrar devolução</button>
+        </form>
+
+        <p th:if="${aula.statusKit == 'DEVOLVIDO'}">
+            Kit devolvido com sucesso.
+        </p>
+    </section>
+</body>
+</html>
