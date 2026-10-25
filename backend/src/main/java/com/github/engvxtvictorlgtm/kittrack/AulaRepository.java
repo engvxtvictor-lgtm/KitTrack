@@ -3,6 +3,7 @@ package com.github.engvxtvictorlgtm.kittrack;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -19,7 +20,16 @@ public class AulaRepository {
     }
 
     public List<AulaResumo> listarAulas() {
-        String sql = """
+        return listarAulas(null, null, null, null);
+    }
+
+    public List<AulaResumo> listarAulas(
+            LocalDate data,
+            String sala,
+            String status,
+            String transmissor) {
+
+        StringBuilder sql = new StringBuilder("""
             SELECT a.id,
                    k.id AS kit_id,
                    t.nome AS transmissor,
@@ -41,20 +51,52 @@ public class AulaRepository {
             FROM aula a
             JOIN transmissor t ON t.id = a.transmissor_id
             LEFT JOIN kit k ON k.aula_id = a.id
-            ORDER BY a.data_aula, a.horario_inicio
-            """;
+            WHERE 1 = 1
+            """);
 
-        return jdbc.query(sql, (rs, row) -> new AulaResumo(
-            rs.getLong("id"),
-            rs.getObject("kit_id", Long.class),
-            rs.getString("transmissor"),
-            rs.getDate("data_aula").toLocalDate(),
-            rs.getTime("horario_inicio").toLocalTime(),
-            rs.getTime("horario_fim").toLocalTime(),
-            rs.getString("sala"),
-            rs.getString("status_kit"),
-            rs.getString("itens")
-        ));
+        List<Object> parametros = new ArrayList<>();
+
+        if (data != null) {
+            sql.append(" AND a.data_aula = ?");
+            parametros.add(data);
+        }
+
+        if (sala != null && !sala.isBlank()) {
+            sql.append(" AND LOWER(a.sala) LIKE LOWER(?)");
+            parametros.add("%" + sala.trim() + "%");
+        }
+
+        if (transmissor != null && !transmissor.isBlank()) {
+            sql.append(" AND LOWER(t.nome) LIKE LOWER(?)");
+            parametros.add("%" + transmissor.trim() + "%");
+        }
+
+        if (status != null && !status.isBlank()) {
+            if ("SEM KIT".equals(status)) {
+                sql.append(" AND k.id IS NULL");
+            } else {
+                sql.append(" AND k.status = ?");
+                parametros.add(status);
+            }
+        }
+
+        sql.append(" ORDER BY a.data_aula, a.horario_inicio");
+
+        return jdbc.query(
+            sql.toString(),
+            (rs, row) -> new AulaResumo(
+                rs.getLong("id"),
+                rs.getObject("kit_id", Long.class),
+                rs.getString("transmissor"),
+                rs.getDate("data_aula").toLocalDate(),
+                rs.getTime("horario_inicio").toLocalTime(),
+                rs.getTime("horario_fim").toLocalTime(),
+                rs.getString("sala"),
+                rs.getString("status_kit"),
+                rs.getString("itens")
+            ),
+            parametros.toArray()
+        );
     }
 
     public List<String> listarTransmissores() {
@@ -100,14 +142,14 @@ public class AulaRepository {
         if (data == null || inicio == null || fim == null
                 || !fim.isAfter(inicio)) {
             throw new IllegalArgumentException(
-                "Confira a data e os horários da aula."
+                "Confira a data e os horarios da aula."
             );
         }
 
         if (camera < 0 || microfone < 0
                 || passador < 0 || pincel < 0) {
             throw new IllegalArgumentException(
-                "As quantidades não podem ser negativas."
+                "As quantidades nao podem ser negativas."
             );
         }
 
@@ -169,7 +211,7 @@ public class AulaRepository {
         );
 
         if (statusList.isEmpty()) {
-            throw new IllegalArgumentException("Kit não encontrado.");
+            throw new IllegalArgumentException("Kit nao encontrado.");
         }
 
         if (!"PENDENTE".equals(statusList.get(0))) {
@@ -200,8 +242,8 @@ public class AulaRepository {
             if (item.quantidade() > item.disponivel()) {
                 throw new IllegalArgumentException(
                     "Estoque insuficiente para " + item.nome()
-                    + ". Necessário: " + item.quantidade()
-                    + "; disponível: " + item.disponivel() + "."
+                    + ". Necessario: " + item.quantidade()
+                    + "; disponivel: " + item.disponivel() + "."
                 );
             }
         }
@@ -231,7 +273,7 @@ public class AulaRepository {
         );
 
         if (statusList.isEmpty()) {
-            throw new IllegalArgumentException("Kit não encontrado.");
+            throw new IllegalArgumentException("Kit nao encontrado.");
         }
 
         if (!"ENTREGUE".equals(statusList.get(0))) {

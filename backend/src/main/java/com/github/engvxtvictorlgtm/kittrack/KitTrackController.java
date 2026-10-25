@@ -23,10 +23,27 @@ public class KitTrackController {
     }
 
     @GetMapping("/")
-    public String inicio(Model model) {
-        model.addAttribute("aulas", repository.listarAulas());
-        model.addAttribute("transmissores", repository.listarTransmissores());
-        model.addAttribute("mensagem", model.getAttribute("mensagem"));
+    public String inicio(
+            @RequestParam(required = false) LocalDate data,
+            @RequestParam(required = false) String sala,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String transmissor,
+            Model model) {
+
+        model.addAttribute(
+            "aulas",
+            repository.listarAulas(data, sala, status, transmissor)
+        );
+        model.addAttribute(
+            "transmissores",
+            repository.listarTransmissores()
+        );
+
+        model.addAttribute("filtroData", data);
+        model.addAttribute("filtroSala", sala);
+        model.addAttribute("filtroStatus", status);
+        model.addAttribute("filtroTransmissor", transmissor);
+
         return "index";
     }
 
@@ -49,7 +66,7 @@ public class KitTrackController {
             );
         } catch (DataAccessException e) {
             redirect.addFlashAttribute(
-                "erro", "Não foi possível cadastrar o transmissor."
+                "erro", "Nao foi possivel cadastrar o transmissor."
             );
         }
 
@@ -81,7 +98,7 @@ public class KitTrackController {
         } catch (IllegalArgumentException | DataAccessException e) {
             redirect.addFlashAttribute(
                 "erro",
-                "Não foi possível cadastrar a aula. Confira os dados e os itens."
+                "Nao foi possivel cadastrar a aula. Confira os dados e os itens."
             );
         }
 

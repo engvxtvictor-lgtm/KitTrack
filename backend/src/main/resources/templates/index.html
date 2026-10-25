@@ -47,17 +47,31 @@
             min-width: 0;
         }
 
-        button {
+        button, .botao-link {
+            display: inline-block;
             border: 0;
             border-radius: 5px;
             padding: 10px 14px;
             cursor: pointer;
             margin: 5px 5px 0 0;
+            font: inherit;
+            text-decoration: none;
         }
 
-        .salvar { background: #176b42; color: white; }
-        .entregar { background: #176b42; color: white; }
-        .devolver { background: #2056a8; color: white; }
+        .salvar, .entregar {
+            background: #176b42;
+            color: white;
+        }
+
+        .devolver {
+            background: #2056a8;
+            color: white;
+        }
+
+        .limpar {
+            background: #e5e7eb;
+            color: #222;
+        }
 
         .detalhes {
             display: flex;
@@ -69,8 +83,12 @@
         .status { font-weight: bold; }
         .mensagem { color: #176b42; font-weight: bold; }
         .erro { color: #b42318; font-weight: bold; }
-
         .acoes { margin-top: 14px; }
+
+        .contador {
+            color: #555;
+            margin-bottom: 14px;
+        }
     </style>
 </head>
 <body>
@@ -168,10 +186,68 @@
         </form>
     </section>
 
+    <section class="painel">
+        <h2>Filtrar aulas e kits</h2>
+
+        <form th:action="@{/}" method="get">
+            <div class="formulario">
+                <label>
+                    Data da aula
+                    <input type="date" name="data" th:value="${filtroData}">
+                </label>
+
+                <label>
+                    Sala
+                    <input type="text" name="sala" maxlength="50"
+                           placeholder="Ex.: SALA-101"
+                           th:value="${filtroSala}">
+                </label>
+
+                <label>
+                    Transmissor
+                    <input type="text" name="transmissor" maxlength="100"
+                           placeholder="Nome do transmissor"
+                           th:value="${filtroTransmissor}">
+                </label>
+
+                <label>
+                    Status do kit
+                    <select name="status">
+                        <option value="">Todos os status</option>
+                        <option value="SEM KIT"
+                                th:selected="${filtroStatus == 'SEM KIT'}">
+                            Sem kit
+                        </option>
+                        <option value="PENDENTE"
+                                th:selected="${filtroStatus == 'PENDENTE'}">
+                            Pendente
+                        </option>
+                        <option value="ENTREGUE"
+                                th:selected="${filtroStatus == 'ENTREGUE'}">
+                            Entregue
+                        </option>
+                        <option value="DEVOLVIDO"
+                                th:selected="${filtroStatus == 'DEVOLVIDO'}">
+                            Devolvido
+                        </option>
+                    </select>
+                </label>
+            </div>
+
+            <button class="salvar" type="submit">Filtrar</button>
+            <a class="botao-link limpar" th:href="@{/}">Limpar filtros</a>
+        </form>
+    </section>
+
     <h2>Aulas cadastradas</h2>
 
+    <p class="contador">
+        Resultados encontrados:
+        <strong th:text="${#lists.size(aulas)}">0</strong>
+    </p>
+
     <div th:if="${#lists.isEmpty(aulas)}" class="vazio">
-        Nenhuma aula cadastrada.
+        Nenhuma aula encontrada para os filtros informados.
     </div>
 
     <section th:each="aula : ${aulas}" class="aula">
