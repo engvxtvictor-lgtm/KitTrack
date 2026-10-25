@@ -1,9 +1,13 @@
+
 package com.github.engvxtvictorlgtm.kittrack;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class AulaRepository {
@@ -51,6 +55,109 @@ public class AulaRepository {
             rs.getString("status_kit"),
             rs.getString("itens")
         ));
+    }
+
+    public List<String> listarTransmissores() {
+        return jdbc.query(
+            "SELECT nome FROM transmissor ORDER BY nome",
+            (rs, row) -> rs.getString("nome")
+        );
+    }
+
+    public List<String> listarTiposItem() {
+        return jdbc.query(
+            "SELECT nome FROM tipo_item ORDER BY nome",
+            (rs, row) -> rs.getString("nome")
+        );
+    }
+
+    public void cadastrarTransmissor(String nome) {
+        jdbc.update(
+            "INSERT INTO transmissor (nome) VALUES (?)",
+            nome.trim()
+        );
+    }
+
+    @Transactional
+    public void cadastrarAula(
+            String nomeTransmissor,
+            LocalDate data,
+            LocalTime inicio,
+            LocalTime fim,
+            String sala,
+            int camera,
+            int microfone,
+            int passador,
+            int pincel) {
+
+        if (nomeTransmissor == null || nomeTransmissor.isBlank()
+                || sala == null || sala.isBlank()) {
+            throw new IllegalArgumentException(
+                "Informe o transmissor e a sala."
+            );
+        }
+
+        if (data == null || inicio == null || fim == null
+                || !fim.isAfter(inicio)) {
+            throw new IllegalArgumentException(
+                "Confira a data e os horários da aula."
+            );
+        }
+
+        if (camera < 0 || microfone < 0
+                || passador < 0 || pincel < 0) {
+            throw new IllegalArgumentException(
+                "As quantidades não podem ser negativas."
+            );
+        }
+
+        Long transmissorId = jdbc.queryForObject(
+            "SELECT id FROM transmissor WHERE nome = ?",
+            Long.class,
+            nomeTransmissor
+        );
+
+        Long aulaId = jdbc.queryForObject("""
+            INSERT INTO aula (
+                transmissor_id, data_aula,
+                horario_inicio, horario_fim, sala
+            )
+            VALUES (?, ?, ?, ?, ?)
+            RETURNING id
+            """,
+            Long.class,
+            transmissorId, data, inicio, fim, sala.trim()
+        );
+
+        Long kitId = jdbc.queryForObject(
+            "INSERT INTO kit (aula_id) VALUES (?) RETURNING id",
+            Long.class,
+            aulaId
+        );
+
+        adicionarItem(kitId, "Camera", camera);
+        adicionarItem(kitId, "Microfone", microfone);
+        adicionarItem(kitId, "Passador", passador);
+        adicionarItem(kitId, "Pincel", pincel);
+    }
+
+    private void adicionarItem(Long kitId, String nome, int quantidade) {
+        if (quantidade == 0) {
+            return;
+        }
+
+        Long tipoItemId = jdbc.queryForObject(
+            "SELECT id FROM tipo_item WHERE nome = ?",
+            Long.class,
+            nome
+        );
+
+        jdbc.update("""
+            INSERT INTO kit_item (kit_id, tipo_item_id, quantidade)
+            VALUES (?, ?, ?)
+            """,
+            kitId, tipoItemId, quantidade
+        );
     }
 
     public void entregarKit(Long id) {
